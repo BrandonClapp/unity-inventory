@@ -8,27 +8,51 @@ public class InventoryConsumer : MonoBehaviour
 {
     Rigidbody rigidbody;
     Inventory inventory;
+    Texture2D lootCursor;
 
     void Start()
     {
-        rigidbody = GetComponentInParent<Rigidbody>();
-        //inventory = GetComponent<Inventory>();
-        //inventory = GameObject.Find("Inventory").GetComponent<Inventory>();
+        rigidbody = GetComponent<Rigidbody>();
         inventory = GetComponentInChildren<Inventory>();
-    }
-
-    void OnCollisionEnter(Collision col)
-    {
-        Debug.Log(col.gameObject.tag);
-        if (col.gameObject.tag == "Loot")
-        {
-            inventory.AddItem(1003);
-            Destroy(col.gameObject);
-        }
+        lootCursor = Resources.Load<Texture2D>("Cursors/lootcursor");
     }
 
     void Update()
     {
+        var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit))
+        {
+            if (hit.collider.tag == "Loot")
+            {
+                if (Input.GetButtonDown("Fire2"))
+                {
+                    // check how close our character is to the loot
+                    //Vector3.Distance(hit.collider.t)
+                    var playerPosition = rigidbody.position;
+                    var hitPosition = hit.collider.transform.position;
+                    var distance = Vector3.Distance(playerPosition, hitPosition);
 
+                    if (distance < 1.5f)
+                    {
+                        var lootInfo = hit.collider.GetComponent<ItemInfo>();
+                        inventory.AddItem(lootInfo.ItemId);
+                        Destroy(hit.collider.gameObject);
+                    }
+                }
+
+                Debug.Log("lootCursor" + lootCursor);
+                if(lootCursor == null)
+                {
+                    Debug.Log("null");
+                }
+
+                Cursor.SetCursor(lootCursor, new Vector2(0, 0), CursorMode.Auto);
+            }
+        }
+
+        
+
+        // todo: if hovering over loot item, change mouse cursor.
     }
 }
