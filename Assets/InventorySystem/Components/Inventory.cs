@@ -39,8 +39,6 @@ public class Inventory : MonoBehaviour {
         AddItem(1002);
         AddItem(1002);
         AddItem(1002);
-        AddItem(1002);
-        AddItem(1002);
         RemoveItem(1);
         RemoveItem(1);
         RemoveItem(1);
@@ -62,14 +60,14 @@ public class Inventory : MonoBehaviour {
         if(_showInventory)
         {
             DrawInventory();
-        }
 
-        if(_showTooltip)
-        {
-            GUI.Box(
-                new Rect(Event.current.mousePosition.x + 15f, Event.current.mousePosition.y, 200, 200),
-                _tooltip,
-                Skin.GetStyle("Tooltip"));
+            if (_showTooltip)
+            {
+                GUI.Box(
+                    new Rect(Event.current.mousePosition.x + 15f, Event.current.mousePosition.y, 200, 200),
+                    _tooltip,
+                    Skin.GetStyle("Tooltip"));
+            }
         }
 
         if (_isDraggingItem)
@@ -115,7 +113,7 @@ public class Inventory : MonoBehaviour {
                         if (e.type == EventType.MouseUp && _isDraggingItem)
                         {
                             // dragging an item to another slot where item exists. (swap)
-                            SwapSlotItems(_draggingSlot.ID, slot.ID);
+                            MoveItem(_draggingSlot.ID, slot.ID);
                             EndDragging();
                         }
                     }
@@ -126,7 +124,7 @@ public class Inventory : MonoBehaviour {
                     {
                         if (e.type == EventType.MouseUp && _isDraggingItem)
                         {
-                            MoveToEmptySlot(_draggingSlot.ID, slot.ID);
+                            MoveItem(_draggingSlot.ID, slot.ID);
                             EndDragging();
                         }
                     }    
@@ -136,7 +134,7 @@ public class Inventory : MonoBehaviour {
                 {
                     _showTooltip = false;
                 }
-                
+
 
                 slotId++;
             }
@@ -209,21 +207,7 @@ public class Inventory : MonoBehaviour {
         slot.Remove();
     }
 
-    void MoveToEmptySlot(int fromSlotId, int toSlotId)
-    {
-        Debug.Log("ToSLot:" + toSlotId);
-        //todo: assert that to slot does not have item.
-        var targetSlot = InventorySlots[toSlotId];
-
-        targetSlot.Item = _draggingSlot.Item;
-        targetSlot.StackSize = _draggingSlot.StackSize;
-
-        var fromSlot = InventorySlots.First(s => s.ID == _draggingSlot.ID);
-        fromSlot.Item = null;
-        fromSlot.StackSize = 0;
-    }
-
-    void SwapSlotItems(int fromSlotId, int toSlotId)
+    void MoveItem(int fromSlotId, int toSlotId)
     {
         // todo: assert that toslot id has item;
         var targetSlot = InventorySlots[toSlotId];
