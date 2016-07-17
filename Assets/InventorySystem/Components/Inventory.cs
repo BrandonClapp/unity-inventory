@@ -39,9 +39,6 @@ public class Inventory : MonoBehaviour {
         AddItem(1002);
         AddItem(1002);
         AddItem(1002);
-        RemoveItem(1);
-        RemoveItem(1);
-        RemoveItem(1);
     }
 
     void Update()
@@ -76,6 +73,47 @@ public class Inventory : MonoBehaviour {
                 new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y, SlotSize, SlotSize),
                 _draggingSlot.Item.Icon);
         }
+    }
+
+    public void AddItem(int itemId)
+    {
+        var item = _database.Items.First(it => it.ID == itemId);
+
+        if (item.MaxStackSize == 1)
+        {
+            // item not stackable
+            AddToFirstAvailableSlot(item);
+            return;
+        }
+
+        var existingSlotsWithItem =
+            InventorySlots.Where(slot => slot.Item != null && slot.Item.ID == item.ID);
+
+        if (!existingSlotsWithItem.Any())
+        {
+            // No slots contain this item to append to.
+            AddToFirstAvailableSlot(item);
+        }
+        else
+        {
+            // Some slots contain this item.
+            // Attempt to stack this item in an existing slot.
+            var stackable = false;
+            foreach (var slot in existingSlotsWithItem)
+            {
+                stackable = slot.StackSize + 1 <= slot.Item.MaxStackSize;
+
+                if (stackable)
+                {
+                    slot.Add(item);
+                    break;
+                }
+            }
+
+            // Could not stack on any of the existing slots.
+            if (!stackable) AddToFirstAvailableSlot(item);
+        }
+
     }
 
     void DrawInventory()
@@ -150,46 +188,7 @@ public class Inventory : MonoBehaviour {
         }
     }
 
-    void AddItem(int itemId)
-    {
-        var item = _database.Items.First(it => it.ID == itemId);
-
-        if(item.MaxStackSize == 1)
-        {
-            // item not stackable
-            AddToFirstAvailableSlot(item);
-            return;
-        }
-
-        var existingSlotsWithItem =
-            InventorySlots.Where(slot => slot.Item != null && slot.Item.ID == item.ID);
-
-        if (!existingSlotsWithItem.Any())
-        {
-            // No slots contain this item to append to.
-            AddToFirstAvailableSlot(item);
-        }
-        else
-        {
-            // Some slots contain this item.
-            // Attempt to stack this item in an existing slot.
-            var stackable = false;
-            foreach (var slot in existingSlotsWithItem)
-            {
-                stackable = slot.StackSize + 1 <= slot.Item.MaxStackSize;
-
-                if (stackable)
-                {
-                    slot.Add(item);
-                    break;
-                }
-            }
-
-            // Could not stack on any of the existing slots.
-            if (!stackable) AddToFirstAvailableSlot(item);
-        }
-        
-    }
+    
 
     void AddToFirstAvailableSlot(Item item)
     {

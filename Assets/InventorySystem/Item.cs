@@ -13,7 +13,7 @@ namespace Assets.InventorySystem
 
         }
 
-        public Item(string name, int id, string desc, int power, int speed, ItemType type, int maxStackSize)
+        public Item(string name, int id, string desc, ItemType type, int maxStackSize)
         {
             Name = name;
             ID = id;
