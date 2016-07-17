@@ -28,6 +28,16 @@ public class Inventory : MonoBehaviour {
         AddItem(1000);
         AddItem(1000);
         AddItem(1001);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
+        AddItem(1002);
     }
 
     void Update()
@@ -37,7 +47,8 @@ public class Inventory : MonoBehaviour {
             _showInventory = !_showInventory;
         }
 
-        Debug.Log("Contains: " + InventoryContains(1000, 5));
+        //Debug.Log("Contains: " + InventoryContains(1000, 5));
+        //MoveItem(2, 1);
     }
 
     void OnGUI()
@@ -52,16 +63,24 @@ public class Inventory : MonoBehaviour {
     void DrawInventory()
     {
         int slotId = 0;
+        int slotSize = 50;
+        int padding = 5;
+
         for (int y = 0; y < SlotsY; y++)
         {
             for (int x = 0; x < SlotsX; x++)
             {
-                var slotRect = new Rect(x * 60, y * 60, 50, 50);
+                int xOffset = x * (slotSize + padding);
+                int yOffset = y * (slotSize + padding);
+
+                var slotRect = new Rect(xOffset, yOffset, slotSize, slotSize);
                 GUI.Box(slotRect, string.Empty, Skin.GetStyle("Slot"));
 
-                if (InventorySlots[slotId].Item != null)
+                var slot = InventorySlots[slotId];
+                if (slot.Item != null)
                 {
-                    GUI.DrawTexture(slotRect, InventorySlots[slotId].Item.Icon);
+                    GUI.DrawTexture(slotRect, slot.Item.Icon);
+                    GUI.Label(slotRect, slot.StackSize.ToString());
                 }
 
                 slotId++;
@@ -130,10 +149,7 @@ public class Inventory : MonoBehaviour {
 
     void MoveItem(int fromSlotId, int toSlotId)
     {
-        if (InventorySlots[fromSlotId] == null)
-        {
-            return;
-        }
+        if (InventorySlots[fromSlotId] == null) return;
 
         var movingItem = InventorySlots[fromSlotId];
         var targetItem = InventorySlots[toSlotId];

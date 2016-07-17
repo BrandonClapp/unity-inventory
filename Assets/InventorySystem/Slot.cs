@@ -26,10 +26,19 @@ namespace Assets.InventorySystem
             }
         }
 
-        public void Remove()
+        public void Remove(bool entireStack = false)
         {
-            Item = null;
-            StackSize = 0;
+            if(entireStack)
+            {
+                Item = null;
+                StackSize = 0;
+            } 
+            else
+            {
+                StackSize--;
+                if (StackSize < 0) StackSize = 0;
+            }
+            
         }
     }
 }
