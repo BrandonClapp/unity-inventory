@@ -36,7 +36,11 @@ namespace Assets.InventorySystem
             else
             {
                 StackSize--;
-                if (StackSize < 0) StackSize = 0;
+                if (StackSize <= 0)
+                {
+                    Item = null;
+                    StackSize = 0;
+                }
             }
             
         }

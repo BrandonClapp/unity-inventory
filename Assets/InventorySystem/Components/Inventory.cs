@@ -12,6 +12,8 @@ public class Inventory : MonoBehaviour {
 
     private ItemDatabase _database;
     private bool _showInventory;
+    private bool _showTooltip;
+    private string _tooltip;
 
     void Start () {
 
@@ -21,7 +23,7 @@ public class Inventory : MonoBehaviour {
         }
 
         _database = GameObject.FindGameObjectWithTag("Item Database").GetComponent<ItemDatabase>();
-        
+
         AddItem(1000);
         AddItem(1000);
         AddItem(1000);
@@ -38,6 +40,9 @@ public class Inventory : MonoBehaviour {
         AddItem(1002);
         AddItem(1002);
         AddItem(1002);
+        RemoveItem(1);
+        RemoveItem(1);
+        RemoveItem(1);
     }
 
     void Update()
@@ -53,10 +58,17 @@ public class Inventory : MonoBehaviour {
 
     void OnGUI()
     {
+        _tooltip = string.Empty;
+
         GUI.skin = Skin;
         if(_showInventory)
         {
             DrawInventory();
+        }
+
+        if(_showTooltip)
+        {
+            GUI.Box(new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y, 200, 200), _tooltip);
         }
     }
 
@@ -81,11 +93,28 @@ public class Inventory : MonoBehaviour {
                 {
                     GUI.DrawTexture(slotRect, slot.Item.Icon);
                     GUI.Label(slotRect, slot.StackSize.ToString());
+                    
+                    if (slotRect.Contains(Event.current.mousePosition))
+                    {
+                        CreateTooltip(slot.Item);
+                        _showTooltip = true;
+                    }
                 }
+
+                if(string.IsNullOrEmpty(_tooltip))
+                {
+                    _showTooltip = false;
+                }
+                
 
                 slotId++;
             }
         }
+    }
+
+    void CreateTooltip(Item item)
+    {
+        _tooltip = item.Name;
     }
 
     void AddItem(int itemId)
@@ -144,6 +173,7 @@ public class Inventory : MonoBehaviour {
     void RemoveItem(int slotId)
     {
         var slot = InventorySlots.Find(s => s.ID == slotId);
+        Debug.Log("Slot: " + slot.ID);
         slot.Remove();
     }
 
