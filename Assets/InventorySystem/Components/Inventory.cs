@@ -7,13 +7,16 @@ public class Inventory : MonoBehaviour {
 
     public int SlotsX, SlotsY;
     public GUISkin Skin;
-
     public List<Slot> InventorySlots = new List<Slot>();
+    public int SlotSize = 50;
 
     private ItemDatabase _database;
     private bool _showInventory;
     private bool _showTooltip;
     private string _tooltip;
+
+    private bool _isDraggingItem;
+    private Slot _draggingSlot;
 
     void Start () {
 
@@ -38,8 +41,6 @@ public class Inventory : MonoBehaviour {
         AddItem(1002);
         AddItem(1002);
         AddItem(1002);
-        AddItem(1002);
-        AddItem(1002);
         RemoveItem(1);
         RemoveItem(1);
         RemoveItem(1);
@@ -51,9 +52,6 @@ public class Inventory : MonoBehaviour {
         {
             _showInventory = !_showInventory;
         }
-
-        //Debug.Log("Contains: " + InventoryContains(1000, 5));
-        //MoveItem(2, 1);
     }
 
     void OnGUI()
@@ -68,24 +66,34 @@ public class Inventory : MonoBehaviour {
 
         if(_showTooltip)
         {
-            GUI.Box(new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y, 200, 200), _tooltip);
+            GUI.Box(
+                new Rect(Event.current.mousePosition.x + 15f, Event.current.mousePosition.y, 200, 200),
+                _tooltip,
+                Skin.GetStyle("Tooltip"));
+        }
+
+        if (_isDraggingItem)
+        {
+            GUI.DrawTexture(
+                new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y, SlotSize, SlotSize),
+                _draggingSlot.Item.Icon);
         }
     }
 
     void DrawInventory()
     {
         int slotId = 0;
-        int slotSize = 50;
         int padding = 5;
+        Event e = Event.current;
 
         for (int y = 0; y < SlotsY; y++)
         {
             for (int x = 0; x < SlotsX; x++)
             {
-                int xOffset = x * (slotSize + padding);
-                int yOffset = y * (slotSize + padding);
+                int xOffset = x * (SlotSize + padding);
+                int yOffset = y * (SlotSize + padding);
 
-                var slotRect = new Rect(xOffset, yOffset, slotSize, slotSize);
+                var slotRect = new Rect(xOffset, yOffset, SlotSize, SlotSize);
                 GUI.Box(slotRect, string.Empty, Skin.GetStyle("Slot"));
 
                 var slot = InventorySlots[slotId];
@@ -94,14 +102,37 @@ public class Inventory : MonoBehaviour {
                     GUI.DrawTexture(slotRect, slot.Item.Icon);
                     GUI.Label(slotRect, slot.StackSize.ToString());
                     
-                    if (slotRect.Contains(Event.current.mousePosition))
+                    if (slotRect.Contains(e.mousePosition))
                     {
                         CreateTooltip(slot.Item);
                         _showTooltip = true;
+
+                        if (e.button == 0 && e.type == EventType.MouseDrag && !_isDraggingItem)
+                        {
+                            BeginDragging(slot);
+                        }
+
+                        if (e.type == EventType.MouseUp && _isDraggingItem)
+                        {
+                            // dragging an item to another slot where item exists. (swap)
+                            SwapSlotItems(_draggingSlot.ID, slot.ID);
+                            EndDragging();
+                        }
                     }
                 }
+                else
+                {
+                    if (slotRect.Contains(e.mousePosition))
+                    {
+                        if (e.type == EventType.MouseUp && _isDraggingItem)
+                        {
+                            MoveToEmptySlot(_draggingSlot.ID, slot.ID);
+                            EndDragging();
+                        }
+                    }    
+                }
 
-                if(string.IsNullOrEmpty(_tooltip))
+                if (string.IsNullOrEmpty(_tooltip))
                 {
                     _showTooltip = false;
                 }
@@ -114,7 +145,8 @@ public class Inventory : MonoBehaviour {
 
     void CreateTooltip(Item item)
     {
-        _tooltip = item.Name;
+        _tooltip += "<color=#4DA4BF>" + item.Name + "</color>\n\n";
+        _tooltip += "<color=#f2f2f2>" + item.Desc + "</color>";
     }
 
     void AddItem(int itemId)
@@ -177,15 +209,31 @@ public class Inventory : MonoBehaviour {
         slot.Remove();
     }
 
-    void MoveItem(int fromSlotId, int toSlotId)
+    void MoveToEmptySlot(int fromSlotId, int toSlotId)
     {
-        if (InventorySlots[fromSlotId] == null) return;
+        Debug.Log("ToSLot:" + toSlotId);
+        //todo: assert that to slot does not have item.
+        var targetSlot = InventorySlots[toSlotId];
 
-        var movingItem = InventorySlots[fromSlotId];
-        var targetItem = InventorySlots[toSlotId];
+        targetSlot.Item = _draggingSlot.Item;
+        targetSlot.StackSize = _draggingSlot.StackSize;
 
-        InventorySlots[toSlotId] = movingItem;
-        InventorySlots[fromSlotId] = targetItem;
+        var fromSlot = InventorySlots.First(s => s.ID == _draggingSlot.ID);
+        fromSlot.Item = null;
+        fromSlot.StackSize = 0;
+    }
+
+    void SwapSlotItems(int fromSlotId, int toSlotId)
+    {
+        // todo: assert that toslot id has item;
+        var targetSlot = InventorySlots[toSlotId];
+        var movingSlot = InventorySlots.First(s => s.ID == _draggingSlot.ID);
+
+        movingSlot.Item = targetSlot.Item;
+        movingSlot.StackSize = targetSlot.StackSize;
+
+        targetSlot.Item = _draggingSlot.Item;
+        targetSlot.StackSize = _draggingSlot.StackSize;
     }
 
     bool InventoryContains(int itemId, int amount)
@@ -196,5 +244,18 @@ public class Inventory : MonoBehaviour {
             .Aggregate((a, b) => a + b);
 
         return numItems >= amount;
+    }
+
+    void BeginDragging(Slot slot)
+    {
+        _draggingSlot = new Slot { ID = slot.ID, Item = slot.Item, StackSize = slot.StackSize };
+        slot.Item = null;
+        _isDraggingItem = true;
+    }
+
+    void EndDragging()
+    {
+        _draggingSlot = null;
+        _isDraggingItem = false;
     }
 }
