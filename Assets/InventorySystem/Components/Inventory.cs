@@ -103,7 +103,6 @@ public class Inventory : MonoBehaviour {
                     if (slotRect.Contains(e.mousePosition))
                     {
                         CreateTooltip(slot.Item);
-                        _showTooltip = true;
 
                         if (e.button == 0 && e.type == EventType.MouseDrag && !_isDraggingItem)
                         {
@@ -114,7 +113,6 @@ public class Inventory : MonoBehaviour {
                         {
                             // dragging an item to another slot where item exists. (swap)
                             MoveItem(_draggingSlot.ID, slot.ID);
-                            EndDragging();
                         }
                     }
                 }
@@ -124,18 +122,14 @@ public class Inventory : MonoBehaviour {
                     {
                         if (e.type == EventType.MouseUp && _isDraggingItem)
                         {
+                            // dragging an item to an empty slot.
                             MoveItem(_draggingSlot.ID, slot.ID);
-                            EndDragging();
                         }
                     }    
                 }
 
-                if (string.IsNullOrEmpty(_tooltip))
-                {
-                    _showTooltip = false;
-                }
-
-
+                TryCloseTooltip();
+                
                 slotId++;
             }
         }
@@ -145,6 +139,15 @@ public class Inventory : MonoBehaviour {
     {
         _tooltip += "<color=#4DA4BF>" + item.Name + "</color>\n\n";
         _tooltip += "<color=#f2f2f2>" + item.Desc + "</color>";
+        _showTooltip = true;
+    }
+
+    void TryCloseTooltip()
+    {
+        if (string.IsNullOrEmpty(_tooltip))
+        {
+            _showTooltip = false;
+        }
     }
 
     void AddItem(int itemId)
@@ -203,13 +206,11 @@ public class Inventory : MonoBehaviour {
     void RemoveItem(int slotId)
     {
         var slot = InventorySlots.Find(s => s.ID == slotId);
-        Debug.Log("Slot: " + slot.ID);
         slot.Remove();
     }
 
     void MoveItem(int fromSlotId, int toSlotId)
     {
-        // todo: assert that toslot id has item;
         var targetSlot = InventorySlots[toSlotId];
         var movingSlot = InventorySlots.First(s => s.ID == _draggingSlot.ID);
 
@@ -218,6 +219,8 @@ public class Inventory : MonoBehaviour {
 
         targetSlot.Item = _draggingSlot.Item;
         targetSlot.StackSize = _draggingSlot.StackSize;
+
+        EndDragging();
     }
 
     bool InventoryContains(int itemId, int amount)
